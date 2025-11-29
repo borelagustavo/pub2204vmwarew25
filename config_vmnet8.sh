@@ -1,22 +1,22 @@
 #!/bin/bash
 
-# --- PARTE 1: Configuração do DHCP (dhcpd.conf) ---
-echo "[1/4] Configurando DHCP..."
+# --- PART 1: DHCP Configuration (dhcpd.conf) ---
+echo "[1/4] Setting up DHCP..."
 
-# Parar serviços temporariamente
+# Temporarily suspending services
 systemctl stop vmware
 /usr/bin/vmware-networks --stop
 
-# Escrever o dhcpd.conf
+# Write the dhcpd.conf file
 cat <<EOF > /etc/vmware/vmnet8/dhcpd/dhcpd.conf
 allow unknown-clients;
-default-lease-time 1800;                # 30 minutos
-max-lease-time 7200;                    # 2 horas
+default-lease-time 1800;                # 30 minutes
+max-lease-time 7200;                    # 2 hours
 
 subnet 172.16.0.0 netmask 255.255.255.0 {
-    range 172.16.0.230 172.16.0.250;         # Range Solicitado
+    range 172.16.0.230 172.16.0.250;         # Range DHCP
     option broadcast-address 172.16.0.255;
-    option domain-name-servers 172.16.0.100; # DNS Solicitado
+    option domain-name-servers 172.16.0.100; # DNS SERVER
     option domain-name localdomain;
     default-lease-time 1800;
     max-lease-time 7200;
@@ -33,25 +33,24 @@ host vmnet8 {
 }
 EOF
 
-# --- PARTE 2: Configuração do NAT (nat.conf) ---
-echo "[2/4] Configurando NAT..."
+# --- PART 2: NAT Configuration (nat.conf) ---
+echo "[2/4] Setting up NAT..."
 
-# Faz backup do nat.conf original
+# Make a backup of the original nat.conf file
 cp /etc/vmware/vmnet8/nat/nat.conf /etc/vmware/vmnet8/nat/nat.conf.bak
 
-# Reescreve o nat.conf com as configurações corretas baseadas no seu arquivo
-# Mantivemos as configurações padrão importantes e fixamos os IPs
+# Rewrite the nat.conf file
 cat <<EOF > /etc/vmware/vmnet8/nat/nat.conf
 # VMware NAT configuration file
 [host]
 useMacosVmnetVirtApi = 0
-# NAT gateway address (Gateway para as VMs)
+# NAT gateway address
 ip = 172.16.0.2
 netmask = 255.255.255.0
 device = /dev/vmnet8
 activeFTP = 1
 allowAnyOUI = 1
-# VMnet host IP address (IP do Ubuntu na rede interna)
+# VMnet host IP address
 hostIp = 172.16.0.1
 resetConnectionOnLinkDown = 1
 resetConnectionOnDestLocalHost = 1
@@ -70,18 +69,18 @@ nbnsRetries = 3
 nbdsTimeout = 3
 
 [incomingtcp]
-# Adicione port forwarding aqui se precisar no futuro
+# Add port forwarding information here if needed in the future
 
 [incomingudp]
 EOF
 
-# --- PARTE 3: Criar Script para IP Secundário ---
-echo "[3/4] Criando script de persistência para IP de Storage..."
+# --- PART 3: Creating a Script for a Secondary IP Address ---
+echo "[3/4] Creating a persistence script for Storage IP..."
 
 cat <<EOF > /usr/local/bin/vmnet8-add-ip.sh
 #!/bin/bash
-# Script para adicionar IP secundário à vmnet8
-# Aguarda a interface existir
+# Script to add a secondary IP address to vmnet8
+# Waiting for the interface to exist
 count=0
 while ! ip link show vmnet8 > /dev/null 2>&1; do
   sleep 1
@@ -89,10 +88,10 @@ while ! ip link show vmnet8 > /dev/null 2>&1; do
   if [ \$count -ge 60 ]; then exit 1; fi # Desiste após 60s
 done
 
-# Aguarda mais um pouco para garantir que o VMware terminou de configurar o IP primário
+# Wait a little longer to ensure VMware has finished configuring the primary IP address
 sleep 5
 
-# Adiciona o IP se ele não existir
+# Add the IP address if it doesn't exist
 if ! ip addr show vmnet8 | grep -q "10.0.130.250"; then
     ip addr add 10.0.130.250/24 dev vmnet8
 fi
@@ -100,12 +99,12 @@ EOF
 
 chmod +x /usr/local/bin/vmnet8-add-ip.sh
 
-# --- PARTE 4: Criar Serviço Systemd para Persistência ---
-echo "[4/4] Criando serviço Systemd para boot automático..."
+# --- PART 4: Creating a Systemd Service for Persistence ---
+echo "[4/4] Creating a Systemd service for automatic boot..."
 
 cat <<EOF > /etc/systemd/system/vmnet8-storage-ip.service
 [Unit]
-Description=Adicionar IP de Storage na vmnet8
+Description=Add Storage IP to vmnet8
 After=vmware.service vmware-networks.service network.target
 Requires=vmware.service
 
@@ -118,15 +117,15 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
-# Recarregar Daemon, Habilitar no Boot e Iniciar tudo
+# Reload Daemon, Enable on Boot, and Start Everything
 systemctl daemon-reload
 systemctl enable vmnet8-storage-ip.service
 
-# Reiniciar VMware e aplicar o IP secundário agora
+# Restart VMware and apply the secondary IP now
 /usr/bin/vmware-networks --start
 systemctl start vmware
 systemctl start vmnet8-storage-ip.service
 
-echo "Configuração Completa."
-echo "Status atual da interface vmnet8:"
+echo "Full Setup"
+echo "Current status of the vmnet8 interface:"
 ip addr show vmnet8

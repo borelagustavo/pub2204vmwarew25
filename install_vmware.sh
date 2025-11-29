@@ -1,25 +1,25 @@
 #!/bin/bash
 
-# Verifica se o script está sendo executado como root
+# Check if the script is being run as root.
 if [ "$EUID" -ne 0 ]; then
-  echo "Por favor, execute este script como root (sudo)."
+  echo "Please run this script as root (sudo)."
   exit
 fi
 
-echo ">>> Iniciando atualização do sistema..."
+echo ">>> Starting system update..."
 apt update 
 apt dist-upgrade -y
 
-echo ">>> Instalando XFCE4 e componentes do Xorg..."
+echo ">>> Installing XFCE4 and Xorg components..."
 apt install xfce4 xfce4-goodies xorg dbus-x11 x11-xserver-utils -y
 
-echo ">>> Instalando e configurando XRDP..."
+echo ">>> Installing and configuring XRDP..."
 apt install xrdp -y
 systemctl enable xrdp
 adduser xrdp ssl-cert
 
 # Configura o startwm.sh para usar o XFCE
-echo ">>> Configurando o ambiente de desktop para XRDP..."
+echo ">>> Setting up the desktop environment for XRDP..."
 cat <<EOF | tee /etc/xrdp/startwm.sh
 #!/bin/sh
 unset DBUS_SESSION_BUS_ADDRESS
@@ -31,8 +31,8 @@ EOF
 chmod +x /etc/xrdp/startwm.sh
 systemctl restart xrdp
 
-# Resolve problemas de permissão do Colord/Polkit
-echo ">>> Aplicando correção do Polkit para Color Manager..."
+# Resolves Colord/Polkit permission issues
+echo ">>> Applying Polkit correction for Color Manager..."
 cat <<EOF | tee /etc/polkit-1/localauthority/50-local.d/45-allow-colord.pkla
 [Allow Colord all Users]
 Identity=unix-user:*
@@ -44,8 +44,8 @@ EOF
 
 systemctl restart xrdp
 
-# Altera o nível de criptografia no xrdp.ini (Substituindo VIM por SED para automação)
-echo ">>> Alterando crypt_level para 'low'..."
+# Changes the encryption level in xrdp.ini
+echo ">>> Changing crypt_level to 'low'..."
 if grep -q "crypt_level=" /etc/xrdp/xrdp.ini; then
     sed -i 's/^crypt_level=.*/crypt_level=low/' /etc/xrdp/xrdp.ini
 else
@@ -54,44 +54,43 @@ fi
 
 systemctl restart xrdp
 
-echo ">>> Otimizando configurações de rede (BBR)..."
+echo ">>> Optimizing network settings (BBR)..."
 echo "net.core.default_qdisc=fq" | tee -a /etc/sysctl.conf
 echo "net.ipv4.tcp_congestion_control=bbr" | tee -a /etc/sysctl.conf
 sysctl -p
 sysctl net.ipv4.tcp_congestion_control
 systemctl restart xrdp
 
-echo ">>> Instalando dependências para VMware..."
+echo ">>> Installing dependencies for VMware..."
 apt install build-essential gcc make linux-headers-$(uname -r) libaio1 -y
 
-# Instalação do VMware
-VMWARE_FILE="VMware-Workstation-Full-25H2-24995812.x86_64.bundle"
+# VMware Installation
+VMWARE_FILE="VMware-Workstation-Full-25H2-XXXXXXXXXX.x86_64.bundle"
 if [ -f "$VMWARE_FILE" ]; then
-    echo ">>> Instalando VMware Workstation ($VMWARE_FILE)..."
+    echo ">>> Installing VMware Workstation ($VMWARE_FILE)..."
     chmod +x "$VMWARE_FILE"
     ./"$VMWARE_FILE" --console --required --eulas-agreed
     vmware-modconfig --console --install-all
 else
-    echo ">>> AVISO: O arquivo $VMWARE_FILE não foi encontrado no diretório atual."
-    echo ">>> A instalação do VMware será pulada."
+    echo ">>> WARNING: The file $VMWARE_FILE was not found in the current directory."
+    echo ">>> The VMware installation will be skipped."
 fi
 
-echo ">>> Instalando Google Chrome..."
+echo ">>> Installing Google Chrome..."
 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg --yes
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
 apt update
 apt install google-chrome-stable -y
 
-echo ">>> Criando usuário 'prajenisw'..."
-# --gecos "" impede perguntas de Nome, Sala, Telefone, etc. Pedirá apenas a senha.
+echo ">>> Creating user 'prajenisw'..."
 if id "prajenisw" &>/dev/null; then
-    echo "Usuário prajenisw já existe."
+    echo "User name prajenisw already exists."
 else
     adduser --gecos "" prajenisw
 fi
 
-echo ">>> Adicionando usuário aos grupos sudo e ssl-cert..."
+echo ">>> Adding a user to the sudo and ssl-cert groups..."
 usermod -aG sudo prajenisw
 usermod -aG ssl-cert prajenisw
 
-echo ">>> Instalação e configuração concluídas!"
+echo ">>> Installation and setup complete!"

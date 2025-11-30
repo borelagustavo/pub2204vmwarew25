@@ -63,22 +63,6 @@ systemctl restart xrdp
 
 echo ">>> Installing Python3 PIP and gdown..."
 apt install -y python3-pip
-pip3 install gdown
-
-echo ">>> Installing dependencies for VMware..."
-apt install build-essential gcc make linux-headers-$(uname -r) libaio1 -y
-
-# VMware Installation
-VMWARE_FILE="VMware-Workstation-Full-25H2-24995812.x86_64.bundle"
-if [ -f "$VMWARE_FILE" ]; then
-    echo ">>> Installing VMware Workstation ($VMWARE_FILE)..."
-    chmod +x "$VMWARE_FILE"
-    ./"$VMWARE_FILE" --console --required --eulas-agreed
-    vmware-modconfig --console --install-all
-else
-    echo ">>> WARNING: File $VMWARE_FILE not found in current directory."
-    echo ">>> VMware installation will be skipped."
-fi
 
 echo ">>> Installing Google Chrome..."
 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg --yes

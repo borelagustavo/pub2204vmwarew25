@@ -10,7 +10,7 @@ echo ">>> Installing dependencies for VMware..."
 apt install build-essential gcc make linux-headers-$(uname -r) libaio1 -y
 
 # VMware Installation
-VMWARE_FILE="VMware-Workstation-Full-25H2-24995812.x86_64.bundle"
+VMWARE_FILE="VMware-Workstation-Full-25H2-xxxxxxxx.x86_64.bundle"
 if [ -f "$VMWARE_FILE" ]; then
     echo ">>> Installing VMware Workstation ($VMWARE_FILE)..."
     chmod +x "$VMWARE_FILE"

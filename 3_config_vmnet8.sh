@@ -5,7 +5,7 @@ echo "  VMware vmnet8 (NAT) configuration"
 echo "============================================"
 echo ""
 
-# --- PARTE 1: Parar serviços ---
+# --- PART 1: Stopping services ---
 echo "[1/5] Stopping VMware services..."
 sudo systemctl stop vmware
 sudo /usr/bin/vmware-networks --stop

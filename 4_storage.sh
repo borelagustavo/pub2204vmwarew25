@@ -89,7 +89,7 @@ fi
 # for added security, but this would prevent remounting without recreating it.
 # If the mount is temporary and not intended for fstab, removing might be acceptable.
 # For persistent mounts, this file is typically kept.
-rm -f "$CREDS_FILE"
-echo "Credentials file $CREDS_FILE removed (optional step)."
+# rm -f "$CREDS_FILE"
+# echo "Credentials file $CREDS_FILE removed (optional step)."
 
 echo "Script execution finished."

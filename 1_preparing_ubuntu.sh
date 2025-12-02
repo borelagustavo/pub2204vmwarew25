@@ -64,6 +64,9 @@ systemctl restart xrdp
 echo ">>> Installing Python3 PIP and gdown..."
 apt install -y python3-pip
 
+echo ">>> Installing CIFS and Rsync..."
+apt install -y cifs-utils rsync
+
 echo ">>> Installing Google Chrome..."
 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg --yes
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
